@@ -40,8 +40,9 @@ def check_status_multiple_crab_jobs(sample_dict):
 
 if __name__ == '__main__':
 
+        #check_status_multiple_crab_jobs(sample.newsignaldict)
         check_status_multiple_crab_jobs(sample.signaldict)
         check_status_multiple_crab_jobs(sample.bkgdict)
-        check_status_multiple_crab_jobs(sample.ttbarbkgdict)
+        #check_status_multiple_crab_jobs(sample.ttbarbkgdict)
         check_status_multiple_crab_jobs(sample.datadict)
 

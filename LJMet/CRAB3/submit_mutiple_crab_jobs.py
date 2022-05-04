@@ -27,7 +27,8 @@ def submit_multiple_crab_jobs(sample_dict):
 
 if __name__ == '__main__':
 
+	#submit_multiple_crab_jobs(sample.newsignaldict)
 	submit_multiple_crab_jobs(sample.signaldict)
 	submit_multiple_crab_jobs(sample.bkgdict)
-	submit_multiple_crab_jobs(sample.ttbarbkgdict)
+	#submit_multiple_crab_jobs(sample.ttbarbkgdict)
 	submit_multiple_crab_jobs(sample.datadict)

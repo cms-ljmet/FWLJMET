@@ -263,10 +263,12 @@ void MultiLepCalc::AnalyzeMuon(edm::Event const & event, BaseEventSelector * sel
 
   for (unsigned int ifilt = 0; ifilt < muTrigMatchFilters.size(); ifilt++) {
     for(pat::TriggerObjectStandAlone obj : *mhEdmTriggerObjectColl){       
-      obj.unpackFilterLabels(event,*mhEdmTriggerResults);
-      obj.unpackPathNames(names);
+      //obj.unpackFilterLabels(event,*mhEdmTriggerResults);
+      //obj.unpackPathNames(names);
+      obj.unpackNamesAndLabels(event,*mhEdmTriggerResults);
       for(unsigned h = 0; h < obj.filterLabels().size(); ++h){
-	if ( obj.filterLabels()[h]!=muTrigMatchFilters[ifilt] ) continue;
+        if(debug) std::cout<< "Filter "<< obj.filterLabels()[h] << std::endl; //<< " Path "<< obj.pathNames()[h]<<std::endl;
+	if ( obj.filterLabels()[h]!=muTrigMatchFilters[ifilt] ) continue; //&& obj.pathNames()[h]!=muTrigMatchFilters[ifilt] ) continue;
 
 	tempmu.SetPtEtaPhiE(obj.pt(),obj.eta(),obj.phi(),obj.energy());
 	if(ifilt == 0) mufilter0objs.push_back(tempmu);
@@ -274,6 +276,9 @@ void MultiLepCalc::AnalyzeMuon(edm::Event const & event, BaseEventSelector * sel
 	else if(ifilt == 2) mufilter2objs.push_back(tempmu);
 	else continue;
 						
+      }
+      for(unsigned h = 0; h < obj.pathNames(true, true).size(); ++h){
+        if(debug) std::cout<< "Path "<< obj.pathNames(true, true)[h]<<std::endl;
       }
     }
   }
@@ -303,7 +308,10 @@ void MultiLepCalc::AnalyzeMuon(edm::Event const & event, BaseEventSelector * sel
   std::vector <int> mu_hltmatched_filter0;
   std::vector <int> mu_hltmatched_filter1;
   std::vector <int> mu_hltmatched_filter2;
-  
+  std::vector <int> mu_hltmatched0p4_filter0;
+  std::vector <int> mu_hltmatched0p4_filter1;
+  std::vector <int> mu_hltmatched0p4_filter2;
+ 
   std::vector <int> muCharge;
   std::vector <int> muGlobal;
   //Four std::vector
@@ -381,28 +389,40 @@ void MultiLepCalc::AnalyzeMuon(edm::Event const & event, BaseEventSelector * sel
 	}
 
 	bool trigmatched0 = false;
+        bool trigmatched0p40 = false;
 	for(unsigned int iobj = 0; iobj < mufilter0objs.size(); iobj++){
 	  tmpLV.SetPtEtaPhiE((*imu)->pt(),(*imu)->eta(),(*imu)->phi(),(*imu)->energy());
 	  if ( mufilter0objs.at(iobj).DeltaR(tmpLV) < 0.2 ) trigmatched0 = true;
+          if ( mufilter0objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p40 = true;
 	}
 	if(trigmatched0) mu_hltmatched_filter0.push_back(1);
 	else mu_hltmatched_filter0.push_back(0);
-	
+	if(trigmatched0p40) mu_hltmatched0p4_filter0.push_back(1);
+        else mu_hltmatched0p4_filter0.push_back(0);
+
 	bool trigmatched1 = false;
+        bool trigmatched0p41 = false;
 	for(unsigned int iobj = 0; iobj < mufilter1objs.size(); iobj++){
 	  tmpLV.SetPtEtaPhiE((*imu)->pt(),(*imu)->eta(),(*imu)->phi(),(*imu)->energy());
 	  if ( mufilter1objs.at(iobj).DeltaR(tmpLV) < 0.2 ) trigmatched1 = true;
+          if ( mufilter1objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p41 = true;
 	}
 	if(trigmatched1) mu_hltmatched_filter1.push_back(1);
 	else mu_hltmatched_filter1.push_back(0);
-	
+	if(trigmatched0p41) mu_hltmatched0p4_filter1.push_back(1);
+        else mu_hltmatched0p4_filter1.push_back(0);
+
 	bool trigmatched2 = false;
+        bool trigmatched0p42 = false;
 	for(unsigned int iobj = 0; iobj < mufilter2objs.size(); iobj++){
 	  tmpLV.SetPtEtaPhiE((*imu)->pt(),(*imu)->eta(),(*imu)->phi(),(*imu)->energy());
 	  if ( mufilter2objs.at(iobj).DeltaR(tmpLV) < 0.2 ) trigmatched2 = true;
+          if ( mufilter2objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p42 = true;
 	}
 	if(trigmatched2) mu_hltmatched_filter2.push_back(1);
 	else mu_hltmatched_filter2.push_back(0);
+        if(trigmatched0p42) mu_hltmatched0p4_filter2.push_back(1);
+        else mu_hltmatched0p4_filter2.push_back(0);
 
 	//charge
 	muCharge.push_back((*imu)->charge());
@@ -508,6 +528,9 @@ void MultiLepCalc::AnalyzeMuon(edm::Event const & event, BaseEventSelector * sel
   SetValue("muTrigMatchFilter0", mu_hltmatched_filter0);
   SetValue("muTrigMatchFilter1", mu_hltmatched_filter1);
   SetValue("muTrigMatchFilter2", mu_hltmatched_filter2);
+  SetValue("muTrigMatch0p4Filter0", mu_hltmatched0p4_filter0);
+  SetValue("muTrigMatch0p4Filter1", mu_hltmatched0p4_filter1);
+  SetValue("muTrigMatch0p4Filter2", mu_hltmatched0p4_filter2);
 
   SetValue("muCharge", muCharge);
   SetValue("muGlobal", muGlobal);
@@ -597,10 +620,12 @@ void MultiLepCalc::AnalyzeElectron(edm::Event const & event, BaseEventSelector *
 
   for (unsigned int ifilt = 0; ifilt < elTrigMatchFilters.size(); ifilt++) {
     for(pat::TriggerObjectStandAlone obj : *mhEdmTriggerObjectColl){       
-      obj.unpackFilterLabels(event,*mhEdmTriggerResults);
-      obj.unpackPathNames(names);
+      //obj.unpackFilterLabels(event,*mhEdmTriggerResults);
+      //obj.unpackPathNames(names);
+      obj.unpackNamesAndLabels(event,*mhEdmTriggerResults);
       for(unsigned h = 0; h < obj.filterLabels().size(); ++h){
-	if ( obj.filterLabels()[h]!=elTrigMatchFilters[ifilt] ) continue;
+        if(debug) std::cout<< "Filter "<< obj.filterLabels()[h]<<std::endl; //<< " Path "<< obj.pathNames()[h]<<std::endl;
+      	if ( obj.filterLabels()[h]!=elTrigMatchFilters[ifilt] ) continue;// && obj.pathNames()[h]!=elTrigMatchFilters[ifilt] ) continue;
 
 	tempele.SetPtEtaPhiE(obj.pt(),obj.eta(),obj.phi(),obj.energy());
 	if(ifilt == 0) elefilter0objs.push_back(tempele);
@@ -608,6 +633,9 @@ void MultiLepCalc::AnalyzeElectron(edm::Event const & event, BaseEventSelector *
 	else if(ifilt == 2) elefilter2objs.push_back(tempele);
 	else continue;
 						
+      }
+      for(unsigned h = 0; h < obj.pathNames(true, true).size(); ++h){
+        if(debug) std::cout<< "Path "<< obj.pathNames(true, true)[h]<<std::endl;
       }
     }
   }
@@ -641,7 +669,10 @@ void MultiLepCalc::AnalyzeElectron(edm::Event const & event, BaseEventSelector *
   std::vector <int> ele_hltmatched_filter0;
   std::vector <int> ele_hltmatched_filter1;
   std::vector <int> ele_hltmatched_filter2;
-  
+  std::vector <int> ele_hltmatched0p4_filter0;
+  std::vector <int> ele_hltmatched0p4_filter1;
+  std::vector <int> ele_hltmatched0p4_filter2;
+ 
   //Four std::vector
   std::vector <double> elPt;
   std::vector <double> elEta;
@@ -734,28 +765,40 @@ void MultiLepCalc::AnalyzeElectron(edm::Event const & event, BaseEventSelector *
       }
 
       bool trigmatched0 = false;
+      bool trigmatched0p40 = false;
       for(unsigned int iobj = 0; iobj < elefilter0objs.size(); iobj++){
 	tmpLV.SetPtEtaPhiE((*iel)->pt(),(*iel)->eta(),(*iel)->phi(),(*iel)->energy());
 	if ( elefilter0objs.at(iobj).DeltaR(tmpLV) < 0.3 ) trigmatched0 = true;
+        if ( elefilter0objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p40 = true;
       }
       if(trigmatched0) ele_hltmatched_filter0.push_back(1);
       else ele_hltmatched_filter0.push_back(0);
+      if(trigmatched0p40) ele_hltmatched0p4_filter0.push_back(1);
+      else ele_hltmatched0p4_filter0.push_back(0);
 
       bool trigmatched1 = false;
+      bool trigmatched0p41 = false;
       for(unsigned int iobj = 0; iobj < elefilter1objs.size(); iobj++){
 	tmpLV.SetPtEtaPhiE((*iel)->pt(),(*iel)->eta(),(*iel)->phi(),(*iel)->energy());
 	if ( elefilter1objs.at(iobj).DeltaR(tmpLV) < 0.3 ) trigmatched1 = true;
+        if ( elefilter1objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p41 = true;
       }
       if(trigmatched1) ele_hltmatched_filter1.push_back(1);
       else ele_hltmatched_filter1.push_back(0);
+      if(trigmatched0p41) ele_hltmatched0p4_filter1.push_back(1);
+      else ele_hltmatched0p4_filter1.push_back(0);
 
       bool trigmatched2 = false;
+      bool trigmatched0p42 = false;
       for(unsigned int iobj = 0; iobj < elefilter2objs.size(); iobj++){
 	tmpLV.SetPtEtaPhiE((*iel)->pt(),(*iel)->eta(),(*iel)->phi(),(*iel)->energy());
 	if ( elefilter2objs.at(iobj).DeltaR(tmpLV) < 0.3 ) trigmatched2 = true;
+        if ( elefilter2objs.at(iobj).DeltaR(tmpLV) < 0.4 ) trigmatched0p42 = true;
       }
       if(trigmatched2) ele_hltmatched_filter2.push_back(1);
       else ele_hltmatched_filter2.push_back(0);
+      if(trigmatched0p42) ele_hltmatched0p4_filter2.push_back(1);
+      else ele_hltmatched0p4_filter2.push_back(0);
 
 
       //Four std::vector
@@ -911,7 +954,10 @@ void MultiLepCalc::AnalyzeElectron(edm::Event const & event, BaseEventSelector *
   SetValue("elTrigMatchFilter0", ele_hltmatched_filter0);
   SetValue("elTrigMatchFilter1", ele_hltmatched_filter1);
   SetValue("elTrigMatchFilter2", ele_hltmatched_filter2);
-  
+  SetValue("elTrigMatch0p4Filter0", ele_hltmatched0p4_filter0);
+  SetValue("elTrigMatch0p4Filter1", ele_hltmatched0p4_filter1);
+  SetValue("elTrigMatch0p4Filter2", ele_hltmatched0p4_filter2);
+ 
   //Four std::vector
   SetValue("elPt"     , elPt);
   SetValue("elEta"    , elEta);
@@ -1581,7 +1627,7 @@ void MultiLepCalc::AnalyzeGenInfo(edm::Event const & event, BaseEventSelector * 
             //}
 
             //Find status 23 particles
-            if (p.status() == 23){
+            if (p.status() == 23 || abs(p.pdgId()) == 13 || abs(p.pdgId()) == 23){ // pdgId option for Muon TnP
 
                 reco::Candidate* mother = (reco::Candidate*) p.mother();
                 if (not mother)            continue;

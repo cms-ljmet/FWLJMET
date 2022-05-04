@@ -40,9 +40,13 @@ REQNAME             = option.finalState+option.year
 OUTFOLDER           = option.outfolder
 
 #JSON for Data
-JSONFORDATA         = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions17/13TeV/Final/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt' #https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2017Analysis#DATA
+JSONFORDATA         = '/uscms_data/d3/wywong/FWLJMET_REPO/CMSSW_10_2_16_UL/src/FWLJMET/LJMet/CRAB3/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt'
+#JSONFORDATA         = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions17/13TeV/ReReco/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt'
+#JSONFORDATA         = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions17/13TeV/Final/Cert_294927-306462_13TeV_PromptReco_Collisions17_JSON.txt' #https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2017Analysis#DATA
 if option.year == '2018': 
-	JSONFORDATA = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions18/13TeV/ReReco/Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt' #https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmV2018Analysis#Early2018Re_reco_17Sep2018_datas
+	#JSONFORDATA = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions18/13TeV/Legacy_2018/Cert_314472-325175_13TeV_Legacy2018_Collisions18_JSON.txt' #https://twiki.cern.ch/twiki/bin/view/CMS/PdmV2018Analysis#Legacy_Re_Reco
+	#JSONFORDATA = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions18/13TeV/ReReco/Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt' #https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmV2018Analysis#Early2018Re_reco_17Sep2018_datas
+	JSONFORDATA = '/uscms_data/d3/wywong/FWLJMET_REPO/CMSSW_10_2_16_UL/src/FWLJMET/LJMet/CRAB3/Cert_314472-325175_13TeV_17SeptEarlyReReco2018ABC_PromptEraD_Collisions18_JSON.txt'
 elif option.year == '2016':
 	JSONFORDATA = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_ReReco_07Aug2017_Collisions16_JSON.txt' #https://twiki.cern.ch/twiki/bin/viewauth/CMS/PdmV2016Analysis#Re_miniAOD_datasets
 
@@ -77,7 +81,7 @@ def create_crab_config_files_from_template(sample_dict,**kwargs):
 		os.system("sed -i 's|ISVLQSIGNAL|"+kwargs['ISVLQSIGNAL']+"|g' "+CRABCONFIG_DIR+"/"+filename)
 
 		#replace strings in new cmsRun file
-		if 'EGamma' in dataset or 'Single' in dataset or 'JetHT' in dataset:
+		if 'Single' in dataset or 'JetHT' in dataset: # or 'EGamma' in dataset
 			os.system("sed -i 's|DATASET|"+dataset+"|g' "+CRABCONFIG_DIR+"/"+cmsRunname)
 		elif 'ext' in dataset:
 			extcode = dataset[dataset.find('ext'):]
@@ -97,6 +101,7 @@ if __name__=='__main__':
 
 	os.system('mkdir -vp '+CRABCONFIG_DIR)
 
+	'''
 	#### Bkg MC - no ttbar - yes MLM
 	create_crab_config_files_from_template(
 		sample.bkghtdict,
@@ -105,7 +110,7 @@ if __name__=='__main__':
 		ISTTBAR='False',
  		DOGENHT='True',
 		)
-
+	'''
 	#### Bkg MC - no ttbar - no MLM
 	create_crab_config_files_from_template(
 		sample.bkgdict,
@@ -114,7 +119,7 @@ if __name__=='__main__':
 		ISTTBAR='False',
  		DOGENHT='False',
 		)
-
+	'''
 	#### Bkg MC - ttbar
 	create_crab_config_files_from_template(
  		sample.ttbarbkgdict,
@@ -123,29 +128,29 @@ if __name__=='__main__':
  		ISTTBAR='True',
  		DOGENHT='False',
  		)
-
-        #### fourtops MC
-        create_crab_config_files_from_template(
-                sample.fourtopssigdict,
-                ISMC='True',
-                ISVLQSIGNAL='False',
-                ISTTBAR='False',
- 		  DOGENHT='False',
-                )
-        create_crab_config_files_from_template(
-                sample.fourtopsttdict,
-                ISMC='True',
-                ISVLQSIGNAL='False',
-                ISTTBAR='True',
- 		  DOGENHT='False',
-                )
-        create_crab_config_files_from_template(
-                sample.fourtopsbkgdict,
-                ISMC='True',
-                ISVLQSIGNAL='False',
-                ISTTBAR='False',
- 		  DOGENHT='False',
-                )
+	'''
+#        #### fourtops MC
+#        create_crab_config_files_from_template(
+#                sample.fourtopssigdict,
+#                ISMC='True',
+#                ISVLQSIGNAL='False',
+#                ISTTBAR='False',
+# 		 DOGENHT='False',
+#                )
+#        create_crab_config_files_from_template(
+#                sample.fourtopsttdict,
+#                ISMC='True',
+#                ISVLQSIGNAL='False',
+#                ISTTBAR='True',
+# 		 DOGENHT='False',
+#                )
+#        create_crab_config_files_from_template(
+#                sample.fourtopsbkgdict,
+#                ISMC='True',
+#                ISVLQSIGNAL='False',
+#                ISTTBAR='False',
+# 		 DOGENHT='False',
+#                )
 
 	#### VLQ signal MC
 	create_crab_config_files_from_template(
@@ -164,3 +169,12 @@ if __name__=='__main__':
 	 	ISTTBAR='False',
 	 	DOGENHT='False',
 	 	)
+
+        #### new signal MC
+#        create_crab_config_files_from_template(
+#                sample.newsignaldict,
+#                ISMC='True',
+#                ISVLQSIGNAL='True',
+#                ISTTBAR='False',
+#                DOGENHT='False',
+#                )
