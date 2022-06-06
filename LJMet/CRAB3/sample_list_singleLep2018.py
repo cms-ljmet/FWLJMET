@@ -110,12 +110,12 @@ datadict = {}
 datadict['SingleElectronRun2018A']  = '/EGamma/Run2018A-17Sep2018-v2/MINIAOD'
 datadict['SingleElectronRun2018B']  = '/EGamma/Run2018B-17Sep2018-v1/MINIAOD'
 datadict['SingleElectronRun2018C']  = '/EGamma/Run2018C-17Sep2018-v1/MINIAOD'
-datadict['SingleElectronRun2018D']  = '/EGamma/Run2018D-PromptReco-v2/MINIAOD'
+datadict['SingleElectronRun2018D']  = '/EGamma/Run2018D-22Jan2019-v2/MINIAOD'
 
 datadict['SingleMuonRun2018A']  = '/SingleMuon/Run2018A-17Sep2018-v2/MINIAOD'
 datadict['SingleMuonRun2018B']  = '/SingleMuon/Run2018B-17Sep2018-v1/MINIAOD'
 datadict['SingleMuonRun2018C']  = '/SingleMuon/Run2018C-17Sep2018-v1/MINIAOD'
-datadict['SingleMuonRun2018D']  = '/SingleMuon/Run2018D-PromptReco-v2/MINIAOD'
+datadict['SingleMuonRun2018D']  = '/SingleMuon/Run2018D-22Jan2019-v2/MINIAOD'
 
 datadict['JetHTRun2018A'] = '/JetHT/Run2018A-17Sep2018-v1/MINIAOD'
 datadict['JetHTRun2018B'] = '/JetHT/Run2018B-17Sep2018-v1/MINIAOD'
@@ -125,6 +125,7 @@ datadict['JetHTRun2018D'] = '/JetHT/Run2018D-PromptReco-v2/MINIAOD'
 #trigdict = {}
 trigdictmc = {}
 trigdictmc['TTTo2L2Nu'] = '/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+trigdictmc['DYM50'] = '/DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM' 
 #trigdictmc['TTToSemiLeptonic'] = '/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
 #trigdictmc['TpTp1400'] = '/TprimeTprime_M-1400_TuneCP5_PSweights_13TeV-madgraph-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v2/MINIAODSIM'
 
@@ -143,6 +144,13 @@ fourtopsttdict['TTTo2L2Nu_TuneCP5down'] = '/TTTo2L2Nu_TuneCP5down_13TeV-powheg-p
 fourtopsttdict['TTTo2L2Nu_TuneCP5up'] = '/TTTo2L2Nu_TuneCP5up_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
 fourtopsttdict['TTToSemiLeptonic_hdampUP'] ='/TTToSemiLeptonic_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
 fourtopsttdict['TTToSemiLeptonic_hdampDOWN'] ='/TTToSemiLeptonic_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTToHadronic_hdampUP'] ='/TTToHadronic_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTTo2L2Nu_hdampUP'] ='/TTTo2L2Nu_hdampUP_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTToHadronic_hdampDOWN'] ='/TTToHadronic_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTTo2L2Nu_hdampDOWN'] ='/TTTo2L2Nu_hdampDOWN_TuneCP5_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTToSemiLeptonic_erdON'] ='/TTToSemiLeptonic_TuneCP5_erdON_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTToHadronic_erdON'] ='/TTToHadronic_TuneCP5_erdON_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
+fourtopsttdict['TTTo2L2Nu_erdON'] ='/TTTo2L2Nu_TuneCP5_erdON_13TeV-powheg-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15-v1/MINIAODSIM'
 fourtopsttdict['TTWH'] = '/TTWH_TuneCP5_13TeV-madgraph-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2/MINIAODSIM'
 fourtopsttdict['TTWWext1'] = '/TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext1-v2/MINIAODSIM'
 fourtopsttdict['TTWWext2'] = '/TTWW_TuneCP5_13TeV-madgraph-pythia8/RunIIAutumn18MiniAOD-102X_upgrade2018_realistic_v15_ext2-v1/MINIAODSIM'
