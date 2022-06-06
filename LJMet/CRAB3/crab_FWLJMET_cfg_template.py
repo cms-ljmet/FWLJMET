@@ -75,7 +75,7 @@ if(isMC):
 		config.Data.unitsPerJob = 2
 	else:
 		config.Data.splitting = 'FileBased'
-		config.Data.unitsPerJob = 2
+		config.Data.unitsPerJob = 1
 		#config.Data.splitting = 'Automatic'
 		#config.Data.unitsPerJob = 1440 # 24 hours
 else:
