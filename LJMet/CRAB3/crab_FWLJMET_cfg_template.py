@@ -76,14 +76,10 @@ if(isMC):
 	else:
 		config.Data.splitting = 'FileBased'
 		config.Data.unitsPerJob = 1
-		#config.Data.splitting = 'Automatic'
-		#config.Data.unitsPerJob = 1440 # 24 hours
 else:
 	config.Data.splitting = 'Automatic'
 	config.Data.unitsPerJob = 720 # 24 hours
 	config.Data.lumiMask = Json_for_data
-	#config.Data.splitting = 'FileBased'
-	#config.Data.unitsPerJob = 1
 config.Data.inputDBS = 'global'
 config.Data.ignoreLocality = False
 config.Data.publication = False

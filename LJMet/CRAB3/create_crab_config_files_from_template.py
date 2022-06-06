@@ -130,23 +130,21 @@ if __name__=='__main__':
                 ISMC='True',
                 ISVLQSIGNAL='False',
                 ISTTBAR='False',
- 		 DOGENHT='False',
+ 		  DOGENHT='False',
                 )
-
         create_crab_config_files_from_template(
                 sample.fourtopsttdict,
                 ISMC='True',
                 ISVLQSIGNAL='False',
                 ISTTBAR='True',
- 		 DOGENHT='False',
+ 		  DOGENHT='False',
                 )
-
         create_crab_config_files_from_template(
                 sample.fourtopsbkgdict,
                 ISMC='True',
                 ISVLQSIGNAL='False',
                 ISTTBAR='False',
- 		 DOGENHT='False',
+ 		  DOGENHT='False',
                 )
 
 	#### VLQ signal MC
@@ -166,4 +164,3 @@ if __name__=='__main__':
 	 	ISTTBAR='False',
 	 	DOGENHT='False',
 	 	)
-
