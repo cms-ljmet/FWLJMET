@@ -22,6 +22,9 @@ int DileptonCalc::BeginJob(edm::ConsumesCollector && iC)
     triggersToken      = iC.consumes<edm::TriggerResults>(mPset.getParameter<edm::InputTag>("TriggerBits"));
     triggerObjectToken = iC.consumes<pat::TriggerObjectStandAloneCollection>(mPset.getParameter<edm::InputTag>("TriggerObjects"));
 
+    //PU
+    PupInfoToken = iC.consumes<std::vector<PileupSummaryInfo>>(edm::InputTag("slimmedAddPileupInfo"));
+
     //PV
     pvToken = iC.consumes<reco::VertexCollection>(mPset.getParameter<edm::InputTag>("pvSrc"));
 
@@ -85,7 +88,9 @@ int DileptonCalc::AnalyzeEvent(edm::Event const & event, BaseEventSelector * sel
     AnalyzeTriggers(event, selector);
     
     AnalyzePV(event, selector);
-    
+   
+    AnalyzePU(event, selector);
+ 
     AnalyzeElectron(event, selector);
     
     AnalyzeMuon(event, selector);
@@ -172,7 +177,8 @@ void DileptonCalc::AnalyzeTriggers(edm::Event const & event, BaseEventSelector *
 
     //double mu
     bool HLT_Mu37_TkMu27=false;
-    bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8=false;
+    bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v=false;
+    bool HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v=false;
     bool HLT_DoubleMu8_Mass8_PFHT350=false;
     bool HLT_DoubleMu4_Mass8_DZ_PFHT350=false;
 
@@ -254,7 +260,8 @@ void DileptonCalc::AnalyzeTriggers(edm::Event const & event, BaseEventSelector *
 
             //Muon paths
             if(Path.find("HLT_Mu37_TkMu27_v")!=std::string::npos) HLT_Mu37_TkMu27=true;
-            if(Path.find("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8")!=std::string::npos) HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8=true;
+            if(Path.find("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v")!=std::string::npos) HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v=true;
+	    if(Path.find("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v")!=std::string::npos) HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v=true;
             if(Path.find("HLT_DoubleMu8_Mass8_PFHT350")!=std::string::npos) HLT_DoubleMu8_Mass8_PFHT350=true;
             if(Path.find("HLT_DoubleMu4_Mass8_DZ_PFHT350")!=std::string::npos) HLT_DoubleMu4_Mass8_DZ_PFHT350=true;
 
@@ -326,7 +333,8 @@ void DileptonCalc::AnalyzeTriggers(edm::Event const & event, BaseEventSelector *
 
     //double mu
     SetValue("HLT_Mu37_TkMu27",HLT_Mu37_TkMu27);
-    SetValue("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8",HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8);
+    SetValue("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v);
+    SetValue("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v",HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v);
     SetValue("HLT_DoubleMu8_Mass8_PFHT350",HLT_DoubleMu8_Mass8_PFHT350);
     SetValue("HLT_DoubleMu4_Mass8_DZ_PFHT350",HLT_DoubleMu4_Mass8_DZ_PFHT350);
 
@@ -396,6 +404,30 @@ void DileptonCalc::AnalyzePV(edm::Event const & event, BaseEventSelector * selec
     goodPVs = *(pvHandle.product());
     
     SetValue("nPV", (int)goodPVs.size());
+
+}
+
+void DileptonCalc::AnalyzePU(edm::Event const & event, BaseEventSelector * selector)
+{
+       //
+       //_____PU______
+       //
+       int NumTrueInts = -1;
+        int NumPUInts = -1;
+        if(isMc){
+          edm::Handle<std::vector<PileupSummaryInfo>> PupInfo;
+          event.getByToken(PupInfoToken, PupInfo);
+
+          for(std::vector<PileupSummaryInfo>::const_iterator PVI = PupInfo->begin(); PVI != PupInfo->end(); ++PVI){
+            int BX = PVI->getBunchCrossing();
+            if(BX == 0){
+              NumTrueInts = PVI->getTrueNumInteractions();
+              NumPUInts = PVI->getPU_NumInteractions();
+            }
+          }
+        }
+        SetValue("nTrueInteractions",NumTrueInts);
+        SetValue("nPileupInteractions",NumPUInts);
 
 }
 
@@ -1238,7 +1270,7 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
     std::vector <double> AK4JetPhi;
     std::vector <double> AK4JetEnergy;
     
-    std::vector <int>    AK4JetTBag;
+    std::vector <int>    AK4JetBTag;
     std::vector <double> AK4JetRCN;
     
     bool isAK8 = false;
@@ -1252,7 +1284,7 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
         AK4JetPhi    . push_back(lv.Phi());
         AK4JetEnergy . push_back(lv.Energy());
         
-        AK4JetTBag   . push_back(btagSfUtil.isJetTagged(*ijet, lv, event, isMc));
+        AK4JetBTag   . push_back(btagSfUtil.isJetTagged(*ijet, lv, event, isMc));
         AK4JetRCN    . push_back(((*ijet)->chargedEmEnergy()+(*ijet)->chargedHadronEnergy()) / ((*ijet)->neutralEmEnergy()+(*ijet)->neutralHadronEnergy()));
     }
     
@@ -1262,7 +1294,7 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
     SetValue("AK4JetPhi"    , AK4JetPhi);
     SetValue("AK4JetEnergy" , AK4JetEnergy);
     
-    SetValue("AK4JetTBag"   , AK4JetTBag);
+    SetValue("AK4JetBTag"   , AK4JetBTag);
     SetValue("AK4JetRCN"    , AK4JetRCN);
 
     //Get cleaned AK4 Jets
@@ -1276,8 +1308,25 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
     std::vector <double> cleanedAK4JetPhi;
     std::vector <double> cleanedAK4JetEnergy;
     
-    std::vector <int>    cleanedAK4JetTBag;
+    std::vector <int>    cleanedAK4JetBTag;
+    std::vector <int>    cleanedAK4JetBTag_bSFup;
+    std::vector <int>    cleanedAK4JetBTag_bSFdn;
+    std::vector <int>    cleanedAK4JetBTag_lSFup;
+    std::vector <int>    cleanedAK4JetBTag_lSFdn;
     std::vector <double> cleanedAK4JetRCN;
+
+    std::vector <double> cleanedAK4JetCSV;
+    std::vector <double> cleanedAK4JetDeepCSVb;
+    std::vector <double> cleanedAK4JetDeepCSVbb;
+    std::vector <double> cleanedAK4JetDeepCSVc;
+    std::vector <double> cleanedAK4JetDeepCSVudsg;
+    std::vector <double> cleanedAK4JetDeepFlavb;
+    std::vector <double> cleanedAK4JetDeepFlavbb;
+    std::vector <double> cleanedAK4JetDeepFlavlepb;
+    std::vector <double> cleanedAK4JetDeepFlavc;
+    std::vector <double> cleanedAK4JetDeepFlavg;
+    std::vector <double> cleanedAK4JetDeepFlavuds;
+    std::vector <double> cleanedAK4JetFlav;
     
     for (std::vector<pat::Jet>::const_iterator ijet = vSelCleanedJets.begin(); ijet != vSelCleanedJets.end(); ijet++){
       //no need to correct so just push back quantities from jet directly
@@ -1299,8 +1348,27 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
       
       TLorentzVector jetP4; jetP4.SetPtEtaPhiE((*ijet).pt(), (*ijet).eta(), (*ijet).phi(), (*ijet).energy() );
       
-      cleanedAK4JetTBag   . push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc));
+      cleanedAK4JetBTag   . push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc));
+      cleanedAK4JetBTag_bSFup.push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc, 1));
+      cleanedAK4JetBTag_bSFdn.push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc, 2));
+      cleanedAK4JetBTag_lSFup.push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc, 3));
+      cleanedAK4JetBTag_lSFdn.push_back(btagSfUtil.isJetTagged(*ijet, jetP4, event, isMc, 4));
       cleanedAK4JetRCN    . push_back(((*ijet).chargedEmEnergy()+(*ijet).chargedHadronEnergy()) / ((*ijet).neutralEmEnergy()+(*ijet).neutralHadronEnergy()));
+
+      cleanedAK4JetCSV          .push_back(ijet->bDiscriminator( "pfCombinedInclusiveSecondaryVertexV2BJetTags" ));
+      cleanedAK4JetDeepCSVb     .push_back(ijet->bDiscriminator( "pfDeepCSVJetTags:probb" ));
+      cleanedAK4JetDeepCSVbb    .push_back(ijet->bDiscriminator( "pfDeepCSVJetTags:probbb" ));
+      cleanedAK4JetDeepCSVc	.push_back(ijet->bDiscriminator( "pfDeepCSVJetTags:probc" ));
+      cleanedAK4JetDeepCSVudsg	.push_back(ijet->bDiscriminator( "pfDeepCSVJetTags:probudsg" ));
+      cleanedAK4JetDeepFlavb	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:probb" ));
+      cleanedAK4JetDeepFlavbb	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:probbb" ));
+      cleanedAK4JetDeepFlavlepb	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:problepb" ));
+      cleanedAK4JetDeepFlavc	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:probc" ));
+      cleanedAK4JetDeepFlavg	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:probg" ));
+      cleanedAK4JetDeepFlavuds	.push_back(ijet->bDiscriminator( "pfDeepFlavourJetTags:probuds" ));
+      cleanedAK4JetFlav		.push_back(abs(ijet->hadronFlavour()));
+
+      std::cout<<"Pt Eta Phi "<<(*ijet).pt()<<" "<<(*ijet).eta()<<" "<<(*ijet).phi()<<std::endl;
     }
     
     //Four std::vector
@@ -1313,9 +1381,25 @@ void DileptonCalc::AnalyzeJets(edm::Event const & event, BaseEventSelector * sel
     SetValue("cleanedAK4JetPhi"    , cleanedAK4JetPhi);
     SetValue("cleanedAK4JetEnergy" , cleanedAK4JetEnergy);
     
-    SetValue("cleanedAK4JetTBag"   , cleanedAK4JetTBag);
+    SetValue("cleanedAK4JetBTag"   , cleanedAK4JetBTag);
+    SetValue("cleanedAK4JetBTag_bSFup", cleanedAK4JetBTag_bSFup);
+    SetValue("cleanedAK4JetBTag_bSFdn", cleanedAK4JetBTag_bSFdn);
+    SetValue("cleanedAK4JetBTag_lSFup", cleanedAK4JetBTag_lSFup);
+    SetValue("cleanedAK4JetBTag_lSFdn", cleanedAK4JetBTag_lSFdn);
     SetValue("cleanedAK4JetRCN"    , cleanedAK4JetRCN);
 
+    SetValue("cleanedAK4JetCSV", cleanedAK4JetCSV);
+    SetValue("cleanedAK4JetDeepCSVb", cleanedAK4JetDeepCSVb);
+    SetValue("cleanedAK4JetDeepCSVbb", cleanedAK4JetDeepCSVbb);
+    SetValue("cleanedAK4JetDeepCSVc", cleanedAK4JetDeepCSVc);
+    SetValue("cleanedAK4JetDeepCSVudsg", cleanedAK4JetDeepCSVudsg);
+    SetValue("cleanedAK4JetDeepFlavb", cleanedAK4JetDeepFlavb);
+    SetValue("cleanedAK4JetDeepFlavbb", cleanedAK4JetDeepFlavbb);
+    SetValue("cleanedAK4JetDeepFlavlepb", cleanedAK4JetDeepFlavlepb);
+    SetValue("cleanedAK4JetDeepFlavc", cleanedAK4JetDeepFlavc);
+    SetValue("cleanedAK4JetDeepFlavg", cleanedAK4JetDeepFlavg);
+    SetValue("cleanedAK4JetDeepFlavuds", cleanedAK4JetDeepFlavuds);
+    SetValue("cleanedAK4JetFlav", cleanedAK4JetFlav);
 }
 
 void DileptonCalc::AnalyzeAK8Jets(edm::Event const & event, BaseEventSelector * selector)

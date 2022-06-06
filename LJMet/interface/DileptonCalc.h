@@ -67,6 +67,7 @@ private:
     void AnalyzeDataType(edm::Event const & event, BaseEventSelector * selector);
     void AnalyzeTriggers(edm::Event const & event, BaseEventSelector * selector);
     void AnalyzePV(edm::Event const & event, BaseEventSelector * selector);
+    void AnalyzePU(edm::Event const & event, BaseEventSelector * selector);
     void AnalyzeElectron(edm::Event const & event, BaseEventSelector * selector);
     void AnalyzeMuon(edm::Event const & event, BaseEventSelector * selector);
     void AnalyzeGenJets(edm::Event const & event, BaseEventSelector * selector);
@@ -109,7 +110,7 @@ private:
     std::string basePDFname;
     std::string newPDFname;
 
-
+    edm::EDGetTokenT<std::vector<PileupSummaryInfo>>   PupInfoToken;
     edm::EDGetTokenT<edm::TriggerResults>                    triggersToken;
     edm::EDGetTokenT<pat::TriggerObjectStandAloneCollection> triggerObjectToken;
     edm::EDGetTokenT<reco::VertexCollection>                 pvToken;

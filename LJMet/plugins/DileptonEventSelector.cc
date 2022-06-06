@@ -61,6 +61,10 @@ void DileptonEventSelector::BeginJob( const edm::ParameterSet& iConfig, edm::Con
     //nLepton
     min_lepton               = selectorConfig.getParameter<int>          ("min_lepton");
 
+    std::cout<<"min_lepton "<<min_lepton<<std::endl;
+    std::cout<<"electron_cuts "<< electron_cuts<< " min_electron "<<min_electron<<" max_electron "<<max_electron<<" electron_minpt "<<electron_minpt<<" electron_maxeta "<<electron_maxeta<<" UseElMVA "<<UseElMVA<<std::endl;
+    std::cout<<"muon_cuts "<<muon_cuts<<" min_muon "<<min_muon<<" max_muon "<<max_muon<<" muon_minpt "<<muon_minpt<<" muon_maxeta "<<std::endl; 
+
     //Jets
     jetsToken                = iC.consumes<pat::JetCollection>(selectorConfig.getParameter<edm::InputTag>("jet_collection"));
     const edm::ParameterSet& PFJetIFconfig = selectorConfig.getParameterSet("pfJetIDSelector") ;
@@ -77,7 +81,8 @@ void DileptonEventSelector::BeginJob( const edm::ParameterSet& iConfig, edm::Con
     doNewJEC                 = selectorConfig.getParameter<bool>("doNewJEC");
     doLepJetCleaning         = selectorConfig.getParameter<bool>("doLepJetCleaning");
     JetMETCorr.Initialize(selectorConfig); // REMINDER: THIS NEEDS --if(!isMc)JetMETCorr.SetFacJetCorr(event)-- somewhere before correcting jets for data, since data JEC is era dependent. !!
-    
+    if(debug) std::cout<<"jet_cuts "<<jet_cuts<<" jet_minpt "<<jet_minpt <<" jet_maxeta "<<jet_maxeta<<" min_jet "<<min_jet<<" max_jet "<<max_jet<<std::endl;
+
     // Misc
     PFCandToken = iC.consumes<pat::PackedCandidateCollection>(selectorConfig.getParameter<edm::InputTag>("PFparticlesCollection"));
     rhoJetsNC_Token = iC.consumes<double>(selectorConfig.getParameter<edm::InputTag>("rhoJetsNCInputTag"));
@@ -883,8 +888,9 @@ bool DileptonEventSelector::JetSelection(edm::Event const & event, pat::strbitse
 
         //now do kinematic cuts and save them, cleaning and JEC could only mess up pfID so use original jet for it (though probably do nothing)
         if (passPFID ){
-
+          if(debug) std::cout<<"jet_minpt "<<jet_minpt<< " jet_maxeta "<<jet_maxeta<<std::endl;
           if (( cleanedJet.pt()>jet_minpt ) && ( fabs(cleanedJet.eta())<jet_maxeta )){
+            if(debug) std::cout<<"vSel Pt Eta Phi "<< cleanedJet.pt()<<" "<< cleanedJet.eta()<<" "<< cleanedJet.phi()<<std::endl;
             ++_n_good_jets;
             vSelCleanedJets.push_back(cleanedJet);
           }

@@ -130,7 +130,7 @@ private:
     bool   doNewJEC;
     bool   doLepJetCleaning;
     bool jet_cuts;
-    bool jet_minpt;
+    double jet_minpt;
     double jet_maxeta;
     int min_jet;
     int max_jet;
