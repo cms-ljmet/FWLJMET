@@ -754,6 +754,7 @@ BestCalc_cfg = cms.PSet(
     maxJetSize = cms.int32(4),
     )
 HOTTaggerCalc_cfg = cms.PSet(
+
     genParticles     = cms.InputTag("prunedGenParticles"),
     ak4PtCut         = cms.double(20),
     qgTaggerKey      = cms.string('QGTagger'),
