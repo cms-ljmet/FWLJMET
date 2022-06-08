@@ -11,12 +11,14 @@ options = VarParsing('analysis')
 options.register('isMC', '', VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Is MC')
 options.register('isTTbar', '', VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Is TTbar')
 options.register('isVLQsignal', '', VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Is VLQ Signal')
+options.register('doGenHT', '', VarParsing.multiplicity.singleton, VarParsing.varType.bool, 'Do Gen HT')
 
 ## SET DEFAULT VALUES
 ## ATTENTION: THESE DEFAULT VALUES ARE SET FOR VLQ SIGNAL ! isMC=True, isTTbar=False, isVLQsignal=True 
 options.isMC = ISMC
 options.isTTbar = ISTTBAR
 options.isVLQsignal = ISVLQSIGNAL
+options.doGenHT = DOGENHT
 options.inputFiles = [
     'root://cmsxrootd.fnal.gov//store/mc/RunIIFall17MiniAODv2/TprimeTprime_M-1400_TuneCP5_13TeV-madgraph-pythia8/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v2/50000/F82DC089-5591-E811-9210-6C3BE5B58198.root'
     ]
@@ -26,6 +28,7 @@ options.parseArguments()
 isMC= options.isMC
 isTTbar = options.isTTbar
 isVLQsignal = options.isVLQsignal
+doGenHT = options.doGenHT
 
 #Check arguments
 print options
@@ -141,7 +144,9 @@ process.filter_any_explicit = hlt.hltHighLevel.clone(
     
     #mm
     'HLT_Mu37_TkMu27_v*',
+    'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v*',
     'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v*',
+    'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v*',
     'HLT_DoubleMu8_Mass8_PFHT350_v*',
     'HLT_DoubleMu4_Mass8_DZ_PFHT350_v*',
 
@@ -226,7 +231,7 @@ process.ecalBadCalibReducedMINIAODFilter = cms.EDFilter(
 ################################
 ## Produce DeepAK8 jet tags
 ################################
-# from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 # from RecoBTag.MXNet.pfDeepBoostedJet_cff import *
 # 
 # updateJetCollection(
@@ -282,16 +287,31 @@ process.ecalBadCalibReducedMINIAODFilter = cms.EDFilter(
 
 ##############################################
 #run QGTagger code again to calculate jet axis1  (HOT Tagger) - https://github.com/susy2015/TopTagger/tree/master/TopTagger#instructions-for-saving-tagger-results-to-nanoaod-with-cmssw_9_4_11
+### 
+###  Add DeepFlavour tags for AK4
 ##############################################
-# updateJetCollection(
-#     process,
-#     jetSource = cms.InputTag('slimmedJets'),
-# )
-# process.load('RecoJets.JetProducers.QGTagger_cfi')
-# # patAlgosToolsTask.add(process.QGTagger)
-# process.QGTagger.srcJets = cms.InputTag('slimmedJets')
-# process.updatedPatJets.userData.userFloats.src += ['QGTagger:ptD','QGTagger:axis1','QGTagger:axis2']
-# process.updatedPatJets.userData.userInts.src += ['QGTagger:mult']
+updateJetCollection(
+    process,
+    jetSource = cms.InputTag('slimmedJets'),
+    pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
+    svSource = cms.InputTag('slimmedSecondaryVertices'),
+    jetCorrections = ('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
+    btagDiscriminators = [
+        'pfDeepFlavourJetTags:probb',
+        'pfDeepFlavourJetTags:probbb',
+        'pfDeepFlavourJetTags:problepb',
+        'pfDeepFlavourJetTags:probc',
+        'pfDeepFlavourJetTags:probuds',
+        'pfDeepFlavourJetTags:probg'
+        ],
+    printWarning=False
+
+)
+process.load('RecoJets.JetProducers.QGTagger_cfi')
+# patAlgosToolsTask.add(process.QGTagger)
+process.QGTagger.srcJets = cms.InputTag('slimmedJets')
+process.updatedPatJets.userData.userFloats.src += ['QGTagger:ptD','QGTagger:axis1','QGTagger:axis2']
+process.updatedPatJets.userData.userInts.src += ['QGTagger:mult']
 
 
 ################################
@@ -304,7 +324,23 @@ process.prefiringweight = l1ECALPrefiringWeightProducer.clone(
     PrefiringRateSystematicUncty = cms.double(0.2),
     SkipWarnings = False)
 
+################################
+## Apply Jet ID to AK4 and AK8
+################################
 
+from PhysicsTools.SelectorUtils.pfJetIDSelector_cfi import pfJetIDSelector
+pfJetIDSelector.version = cms.string('WINTER17')
+pfJetIDSelector.quality = cms.string('TIGHT')
+process.tightAK4Jets = cms.EDFilter("PFJetIDSelectionFunctorFilter",
+                                    filterParams =pfJetIDSelector.clone(),
+                                    src = cms.InputTag("updatedPatJets"),
+)
+
+pfJetIDSelector.version = cms.string('WINTER17PUPPI')
+process.tightPackedJetsAK8Puppi = cms.EDFilter("PFJetIDSelectionFunctorFilter",
+                                               filterParams =pfJetIDSelector.clone(),
+                                               src = cms.InputTag("packedJetsAK8Puppi"),
+)
 
 ################################################
 ### LJMET
@@ -371,7 +407,9 @@ hlt_path_em = cms.vstring(
     )
 hlt_path_mm = cms.vstring(
     'HLT_Mu37_TkMu27_v',
+    'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_v',
     'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v',
+    'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v',
     'HLT_DoubleMu8_Mass8_PFHT350_v',
     'HLT_DoubleMu4_Mass8_DZ_PFHT350_v',
     )
@@ -430,15 +468,16 @@ DileptonSelector_cfg = cms.PSet(
             
             
             # Jets
-            jet_collection           = cms.InputTag('slimmedJets'),
+#            jet_collection           = cms.InputTag('slimmedJets'),
+            jet_collection           = cms.InputTag('tightAK4Jets'),
             pfJetIDSelector = cms.PSet( # taken from https://github.com/cms-sw/cmssw/blob/CMSSW_9_4_X/PhysicsTools/SelectorUtils/python/pfJetIDSelector_cfi.py
                     #version = cms.string('WINTER17'), ## Is this correct? why was it "FIRSTDATA" before?? -- June 4th, 2019.
-                    version = cms.string('FIRSTDATA'), ## Is this correct?
-                    quality = cms.string('LOOSE'),
+                    version = cms.string('WINTER17'), ## Is this correct?
+                    quality = cms.string('TIGHT'),
             ),
             jet_cuts                 = cms.bool(True),
             jet_minpt                = cms.double(30.0),
-            jet_maxeta               = cms.double(5.0),
+            jet_maxeta               = cms.double(2.4), #5.0),
             min_jet                  = cms.int32(4),
             max_jet                  = cms.int32(4000),
 
@@ -475,9 +514,10 @@ DileptonSelector_cfg = cms.PSet(
 
             #Btag
             btagOP                   = cms.string('MEDIUM'),
-            bdisc_min                = cms.double(0.4941), # THIS HAS TO MATCH btagOP !
+            bdisc_min                = cms.double(0.3033), #0.4941), # THIS HAS TO MATCH btagOP !
             applyBtagSF              = cms.bool(True), #This is implemented by BTagSFUtil.cc
-            DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
+            #DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
+	    DeepJetfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepFlavour_94XSF_WP_V3_B_F.csv'),
             DeepCSVSubjetfile        = cms.FileInPath('FWLJMET/LJMet/data/subjet_DeepCSV_94XSF_V3_B_F.csv'),
             BTagUncertUp             = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
             BTagUncertDown           = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
@@ -505,17 +545,24 @@ DileptonCalc_cfg = cms.PSet(
             pvSrc   = cms.InputTag('offlineSlimmedPrimaryVertices'),
             
             # Electon
-            UseElMVA                 = cms.bool(False), #True means save MVA values, False means not saving.
-
+            UseElMVA                 = cms.bool(True), #True means save MVA values, False means not saving.
+           
             # Misc
             keepFullMChistory      = cms.bool(isMC),
             rhoJetsInputTag        = cms.InputTag("fixedGridRhoFastjetAll"), #this is for electron. Why is it different compared to muon?
             rhoJetsNCInputTag      = cms.InputTag("fixedGridRhoFastjetCentralNeutral",""), #this is for muon
             PFparticlesCollection  = cms.InputTag("packedPFCandidates"),
-            
+           
+            elTrigMatchFilters      = cms.vstring( ), #'hltEle15VVVLGsfTrackIsoFilter','hltEle38noerWPTightGsfTrackIsoFilter'), #Ele15_IsoVVVL_PFHT450, Ele38_WPTight
+            muTrigMatchFilters      = cms.vstring( ), # 'hltL3MuVVVLIsoFIlter','hltL3crIsoL1sMu22Or25L1f0L2f10QL3f27QL3trkIsoFiltered0p07','hltL3fL1sMu22Or25L1f0L2f10QL3Filtered50Q'), # Mu15_IsoVVVL_PFHT450, IsoMu27, Mu50
+            triggerCollection      = cms.InputTag("TriggerResults::HLT"),
+            triggerSummary         = cms.InputTag("slimmedPatTrigger"),
+
+ 
             # Jet corrections needs to be passed here again if Calc uses jet correction
             AK8jet_collection           = cms.InputTag('slimmedJetsAK8'),
             doNewJEC                 = cms.bool(doNewJEC),
+            doAllJetSyst             = cms.bool(doAllJetSyst),
             JECup                    = cms.bool(JECup),
             JECdown                  = cms.bool(JECdown),
             JERup                    = cms.bool(JERup),
@@ -544,18 +591,24 @@ DileptonCalc_cfg = cms.PSet(
             metmod_collection = cms.InputTag('slimmedMETsModifiedMET'),
 
             #Gen stuff
+            saveGenHT          = cms.bool(False),
             genParticlesCollection = cms.InputTag("prunedGenParticles"),
             genJetsCollection      = cms.InputTag("slimmedGenJets"),
-            
             OverrideLHEWeights = cms.bool(isVLQsignal), #TRUE FOR SIGNALS, False otherwise
             basePDFname        = cms.string('NNPDF31_nnlo_as_0118_nf_4'),
             newPDFname         = cms.string('NNPDF31_nnlo_as_0118_nf_4_mc_hessian'),
+            keepPDGID          = cms.vuint32(1, 2, 3, 4, 5, 6, 21, 11, 12, 13, 14, 15, 16, 24),
+            keepMomPDGID       = cms.vuint32(6, 24),
+            keepPDGIDForce     = cms.vuint32(6,6),
+            keepStatusForce    = cms.vuint32(62,22),
+            cleanGenJets       = cms.bool(True),
 
             #Btagging - Btag info needs to be passed here again if Calc uses Btagging.
             btagOP                   = cms.string('MEDIUM'),
-            bdisc_min                = cms.double(0.4941), # THIS HAS TO MATCH btagOP !
+            bdisc_min                = cms.double(0.3033), #0.4941), # THIS HAS TO MATCH btagOP !
             applyBtagSF              = cms.bool(True), #This is implemented by BTagSFUtil.cc
-            DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
+	    DeepJetfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepFlavour_94XSF_WP_V3_B_F.csv'),
+            #DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
             DeepCSVSubjetfile        = cms.FileInPath('FWLJMET/LJMet/data/subjet_DeepCSV_94XSF_V3_B_F.csv'),
             BTagUncertUp             = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
             BTagUncertDown           = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
@@ -609,9 +662,10 @@ JetSubCalc_cfg = cms.PSet(
 
             #Btagging - Btag info needs to be passed here again if Calc uses Btagging.
             btagOP                   = cms.string('MEDIUM'),
-            bdisc_min                = cms.double(0.4941), # THIS HAS TO MATCH btagOP !
+            bdisc_min                = cms.double(0.3033), #0.4941), # THIS HAS TO MATCH btagOP !
             applyBtagSF              = cms.bool(True), #This is implemented by BTagSFUtil.cc
-            DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
+            #DeepCSVfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepCSV_94XSF_V3_B_F.csv'),
+	    DeepJetfile              = cms.FileInPath('FWLJMET/LJMet/data/DeepFlavour_94XSF_WP_V3_B_F.csv'),
             DeepCSVSubjetfile        = cms.FileInPath('FWLJMET/LJMet/data/subjet_DeepCSV_94XSF_V3_B_F.csv'),
             BTagUncertUp             = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
             BTagUncertDown           = cms.bool(False), # no longer needed, but can still be utilized. Keep false as default.
@@ -668,7 +722,7 @@ process.ljmet = cms.EDAnalyzer(
                         'JetSubCalc',
                         # 'TTbarMassCalc',
                         # 'DeepAK8Calc',
-                        # 'HOTTaggerCalc',
+                        'HOTTaggerCalc',
                         # 'BestCalc', #NOT WORKING at the moment, April 5, 2019.--Rizki.
         ),
         exclude_calcs = cms.vstring(
@@ -686,10 +740,195 @@ process.ljmet = cms.EDAnalyzer(
         JetSubCalc    = cms.PSet(JetSubCalc_cfg),
         # TTbarMassCalc = cms.PSet(TTbarMassCalc_cfg),
         # DeepAK8Calc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
-        # HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
+        HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
         # BestCalc      = cms.PSet(BestCalc_cfg),
 
-)
+        )
+
+'''
+## JECup - reset bools for all calcs/selectors that use JEC
+DileptonSelector_cfg.JECup = cms.bool(True)
+DileptonCalc_cfg.JECup     = cms.bool(True)
+JetSubCalc_cfg.JECup       = cms.bool(True)
+process.ljmet_JECup = cms.EDAnalyzer(
+        'LJMet',
+
+        debug         = cms.bool(False),
+        ttree_name    = cms.string('ljmet_JECup'),
+        verbosity     = cms.int32(0),
+        selector      = cms.string('DileptonSelector'),
+        include_calcs = cms.vstring(
+                        'DileptonCalc',
+                        'TpTpCalc',
+                        'CommonCalc',
+                        'JetSubCalc',
+                        # 'TTbarMassCalc',
+                        # 'DeepAK8Calc',
+                        'HOTTaggerCalc',
+                        #'BestCalc',
+        ),
+        exclude_calcs = cms.vstring(
+                        'TestCalc',
+                        'DummyCalc',
+        ),
+
+        # name has to match the name as registered in BeginJob of  EventSelector.cc
+        DileptonSelector = cms.PSet(DileptonSelector_cfg),
+
+        # Calc cfg name has to match the name as registered in Calc.cc
+        DileptonCalc  = cms.PSet(DileptonCalc_cfg),
+        TpTpCalc      = cms.PSet(TpTpCalc_cfg),
+        CommonCalc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        JetSubCalc    = cms.PSet(JetSubCalc_cfg),
+        TTbarMassCalc = cms.PSet(TTbarMassCalc_cfg),
+        DeepAK8Calc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
+        BestCalc      = cms.PSet(BestCalc_cfg),
+
+        )
+
+
+##JECdown - reset bools for all calcs/selectors that use JEC
+DileptonSelector_cfg.JECup   = cms.bool(False)
+DileptonCalc_cfg.JECup       = cms.bool(False)
+JetSubCalc_cfg.JECup         = cms.bool(False)
+DileptonSelector_cfg.JECdown = cms.bool(True)
+DileptonCalc_cfg.JECdown     = cms.bool(True)
+JetSubCalc_cfg.JECdown       = cms.bool(True)
+process.ljmet_JECdown = cms.EDAnalyzer(
+        'LJMet',
+
+        debug         = cms.bool(False),
+        ttree_name    = cms.string('ljmet_JECdown'),
+        verbosity     = cms.int32(0),
+        selector      = cms.string('DileptonSelector'),
+        include_calcs = cms.vstring(
+                        'DileptonCalc',
+                        'TpTpCalc',
+                        'CommonCalc',
+                        'JetSubCalc',
+                        # 'TTbarMassCalc',
+                        # 'DeepAK8Calc',
+                        'HOTTaggerCalc',
+                        #'BestCalc',
+        ),
+        exclude_calcs = cms.vstring(
+                        'TestCalc',
+                        'DummyCalc',
+        ),
+
+        # name has to match the name as registered in BeginJob of  EventSelector.cc
+        DileptonSelector = cms.PSet(DileptonSelector_cfg),
+
+        # Calc cfg name has to match the name as registered in Calc.cc
+        DileptonCalc  = cms.PSet(DileptonCalc_cfg),
+        TpTpCalc      = cms.PSet(TpTpCalc_cfg),
+        CommonCalc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        JetSubCalc    = cms.PSet(JetSubCalc_cfg),
+        TTbarMassCalc = cms.PSet(TTbarMassCalc_cfg),
+        DeepAK8Calc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
+        BestCalc      = cms.PSet(BestCalc_cfg),
+
+        )
+
+##JERup - reset bools for all calcs/selectors that use JEC
+DileptonSelector_cfg.JECup   = cms.bool(False)
+DileptonCalc_cfg.JECup       = cms.bool(False)
+JetSubCalc_cfg.JECup         = cms.bool(False)
+DileptonSelector_cfg.JECdown = cms.bool(False)
+DileptonCalc_cfg.JECdown     = cms.bool(False)
+JetSubCalc_cfg.JECdown       = cms.bool(False)
+DileptonSelector_cfg.JERup   = cms.bool(True)
+DileptonCalc_cfg.JERup       = cms.bool(True)
+JetSubCalc_cfg.JERup         = cms.bool(True)
+process.ljmet_JERup = cms.EDAnalyzer(
+        'LJMet',
+
+        debug         = cms.bool(False),
+        ttree_name    = cms.string('ljmet_JERup'),
+        verbosity     = cms.int32(0),
+        selector      = cms.string('DileptonSelector'),
+        include_calcs = cms.vstring(
+                        'DileptonCalc',
+                        'TpTpCalc',
+                        'CommonCalc',
+                        'JetSubCalc',
+                        # 'TTbarMassCalc',
+                        # 'DeepAK8Calc',
+                        'HOTTaggerCalc',
+                        #'BestCalc',
+        ),
+        exclude_calcs = cms.vstring(
+                        'TestCalc',
+                        'DummyCalc',
+        ),
+
+        # name has to match the name as registered in BeginJob of  EventSelector.cc
+        DileptonSelector = cms.PSet(DileptonSelector_cfg),
+
+        # Calc cfg name has to match the name as registered in Calc.cc
+        DileptonCalc  = cms.PSet(DileptonCalc_cfg),
+        TpTpCalc      = cms.PSet(TpTpCalc_cfg),
+        CommonCalc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        JetSubCalc    = cms.PSet(JetSubCalc_cfg),
+        TTbarMassCalc = cms.PSet(TTbarMassCalc_cfg),
+        DeepAK8Calc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
+        BestCalc      = cms.PSet(BestCalc_cfg),
+
+        )
+
+##JERup - reset bools for all calcs/selectors that use JEC
+DileptonSelector_cfg.JECup   = cms.bool(False)
+DileptonCalc_cfg.JECup       = cms.bool(False)
+JetSubCalc_cfg.JECup         = cms.bool(False)
+DileptonSelector_cfg.JECdown = cms.bool(False)
+DileptonCalc_cfg.JECdown     = cms.bool(False)
+JetSubCalc_cfg.JECdown       = cms.bool(False)
+DileptonSelector_cfg.JERup   = cms.bool(False)
+DileptonCalc_cfg.JERup       = cms.bool(False)
+JetSubCalc_cfg.JERup         = cms.bool(False)
+DileptonSelector_cfg.JERdown = cms.bool(True)
+DileptonCalc_cfg.JERdown     = cms.bool(True)
+JetSubCalc_cfg.JERdown       = cms.bool(True)
+process.ljmet_JERdown = cms.EDAnalyzer(
+        'LJMet',
+
+        debug         = cms.bool(False),
+        ttree_name    = cms.string('ljmet_JERdown'),
+        verbosity     = cms.int32(0),
+        selector      = cms.string('DileptonSelector'),
+        include_calcs = cms.vstring(
+                        'DileptonCalc',
+                        'TpTpCalc',
+                        'CommonCalc',
+                        'JetSubCalc',
+                        # 'TTbarMassCalc',
+                        # 'DeepAK8Calc',
+                        'HOTTaggerCalc',
+                        #'BestCalc',
+        ),
+        exclude_calcs = cms.vstring(
+                        'TestCalc',
+                        'DummyCalc',
+        ),
+
+        # name has to match the name as registered in BeginJob of  EventSelector.cc
+        DileptonSelector = cms.PSet(DileptonSelector_cfg),
+
+        # Calc cfg name has to match the name as registered in Calc.cc
+        DileptonCalc  = cms.PSet(DileptonCalc_cfg),
+        TpTpCalc      = cms.PSet(TpTpCalc_cfg),
+        CommonCalc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        JetSubCalc    = cms.PSet(JetSubCalc_cfg),
+        TTbarMassCalc = cms.PSet(TTbarMassCalc_cfg),
+        DeepAK8Calc    = cms.PSet(), #current ljmet wants all calc to send a PSet, event if its empty.
+        HOTTaggerCalc = cms.PSet(HOTTaggerCalc_cfg),
+        BestCalc      = cms.PSet(BestCalc_cfg),
+
+        )
+'''
 
 ################################################
 ### PROCESS PATH
@@ -736,10 +975,15 @@ if (isTTbar):
                          process.egammaPostRecoSeq *
                          #process.updatedJetsAK8PuppiSoftDropPacked *
                          #process.packedJetsAK8Puppi *
-                         #process.QGTagger *
+                         process.QGTagger *
+                         process.tightAK4Jets *
                          process.ecalBadCalibReducedMINIAODFilter *
                          process.ttbarcat *
-                         process.ljmet #(ntuplizer) 
+                         process.ljmet #*#(ntuplizer) 
+                         #process.ljmet_JECup *#(ntuplizer) 
+                         #process.ljmet_JECdown * #(ntuplizer) 
+                         #process.ljmet_JERup *#(ntuplizer) 
+                         #process.ljmet_JERdown #(ntuplizer) 
                          )
 
 elif(isMC):
@@ -751,9 +995,14 @@ elif(isMC):
        process.egammaPostRecoSeq *
        #process.updatedJetsAK8PuppiSoftDropPacked *
        #process.packedJetsAK8Puppi *
-       #process.QGTagger *
+       process.QGTagger *
+       process.tightAK4Jets *
        process.ecalBadCalibReducedMINIAODFilter *
-       process.ljmet #(ntuplizer) 
+       process.ljmet #*#(ntuplizer) 
+       #process.ljmet_JECup *#(ntuplizer) 
+       #process.ljmet_JECdown *#(ntuplizer) 
+       #process.ljmet_JERup *#(ntuplizer) 
+       #process.ljmet_JERdown #(ntuplizer) 
     )
 else: #Data 
     process.p = cms.Path(
@@ -763,7 +1012,8 @@ else: #Data
        process.egammaPostRecoSeq *
        #process.updatedJetsAK8PuppiSoftDropPacked *
        #process.packedJetsAK8Puppi *
-       #process.QGTagger *
+       process.QGTagger *
+       process.tightAK4Jets *
        process.ecalBadCalibReducedMINIAODFilter *
        process.ljmet #(ntuplizer)
     )

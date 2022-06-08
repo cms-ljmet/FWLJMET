@@ -3,7 +3,7 @@ import os
 
 
 relBase = os.environ['CMSSW_BASE']
-
+os.environ['CMSSW_SEARCH_PATH']=os.environ['CMSSW_SEARCH_PATH']+":/uscms_data/d3/wywong/FWLJMET_2017/CMSSW_10_2_10/src"
 
 ## PARSE ARGUMENTS
 from FWCore.ParameterSet.VarParsing import VarParsing
@@ -435,7 +435,7 @@ DileptonSelector_cfg = cms.PSet(
             ),
             jet_cuts                 = cms.bool(True),
             jet_minpt                = cms.double(30.0),
-            jet_maxeta               = cms.double(2.4),
+            jet_maxeta               = cms.double(5.0), #(2.4),
             min_jet                  = cms.int32(4),
             max_jet                  = cms.int32(4000),
 
